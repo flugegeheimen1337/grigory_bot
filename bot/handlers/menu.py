@@ -26,6 +26,11 @@ router = private_router()
 async def start(message: Message, state: FSMContext) -> None:
     await state.clear()
     if message.from_user:
+        logger.info(
+            "Команда /start: id=%s username=%s",
+            message.from_user.id,
+            message.from_user.username,
+        )
         await ensure_admin_commands(message.bot, message.from_user)
     live = await database.live_enabled()
     await message.answer(

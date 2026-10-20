@@ -121,11 +121,13 @@ async def _flow() -> None:
         await database.connect(path)
         dispatcher = build_dispatcher()
 
-        await dispatcher.feed_update(bot, _message(1, stranger, "/admin"))
-        assert _sent(session, stranger.id) == []
-
         await dispatcher.feed_update(bot, _message(2, admin, "/start"))
         assert any("Здравствуйте" in text for text in _sent(session, admin.id))
+
+        await dispatcher.feed_update(bot, _message(1, stranger, "/admin"))
+        stranger_texts = _sent(session, stranger.id)
+        assert any("Нет доступа" in text for text in stranger_texts)
+        assert not any("Админ-панель" in text for text in stranger_texts)
 
         await dispatcher.feed_update(bot, _message(3, admin, "/admin"))
         assert any("Админ-панель" in text for text in _sent(session, admin.id))

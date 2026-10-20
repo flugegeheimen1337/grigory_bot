@@ -9,6 +9,34 @@ def test_products_orders_and_settings() -> None:
     asyncio.run(_scenario())
 
 
+def test_first_unknown_admin_is_saved_once() -> None:
+    asyncio.run(_claim_once())
+
+
+async def _claim_once() -> None:
+    from aiogram.types import User
+
+    from bot.access import claim_first_admin
+
+    fd, path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    try:
+        await database.connect(path)
+        first = User(id=7, is_bot=False, first_name="Тест", username=None)
+        second = User(id=8, is_bot=False, first_name="Другой", username="nope")
+        assert await claim_first_admin(first) is True
+        assert await database.is_admin_id(7) is True
+        assert await claim_first_admin(second) is False
+        assert await database.list_admin_ids() == [7]
+    finally:
+        await database.close()
+        for suffix in ("", "-wal", "-shm"):
+            try:
+                os.remove(path + suffix)
+            except FileNotFoundError:
+                pass
+
+
 async def _scenario() -> None:
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)

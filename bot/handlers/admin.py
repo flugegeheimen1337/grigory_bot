@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from bot import db as database
-from bot.access import AdminGate, ensure_admin_commands
+from bot.access import AdminGate, claim_first_admin, denial_text, ensure_admin_commands, is_admin
 from bot.filters import NotCommand
 from bot.formatters import (
     clamp_page,
@@ -255,8 +255,14 @@ async def _saved_product(message: Message, state: FSMContext, product_id: int) -
 @router.message(Command("admin"))
 async def open_admin(message: Message, state: FSMContext) -> None:
     await state.clear()
-    if message.from_user:
-        await ensure_admin_commands(message.bot, message.from_user)
+    user = message.from_user
+    if user is None:
+        return
+    logger.info("Команда /admin: id=%s username=%s", user.id, user.username)
+    if not await is_admin(user) and not await claim_first_admin(user):
+        await message.answer(denial_text(user))
+        return
+    await ensure_admin_commands(message.bot, user)
     await show_admin_home(message, edit=False)
 
 

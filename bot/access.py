@@ -33,6 +33,28 @@ async def is_admin(user: User) -> bool:
     return await database.is_admin_id(user.id)
 
 
+async def claim_first_admin(user: User) -> bool:
+    if await database.list_admin_ids():
+        return False
+    await database.remember_admin(user.id, user.username)
+    logger.warning(
+        "Первый админ сохранён по /admin: id=%s username=%s",
+        user.id,
+        user.username,
+    )
+    return True
+
+
+def denial_text(user: User) -> str:
+    who = f"@{user.username}" if user.username else "без username"
+    names = ", ".join(f"@{name}" for name in sorted(config.admin_usernames()))
+    return (
+        "Нет доступа к админке.\n"
+        f"Telegram видит этот аккаунт как {who}, id {user.id}.\n"
+        f"В списке: {names}."
+    )
+
+
 async def ensure_admin_commands(bot: Bot, user: User) -> None:
     if user.id in _commands_ready:
         return
@@ -51,6 +73,9 @@ async def ensure_admin_commands(bot: Bot, user: User) -> None:
 
 class AdminGate(BaseMiddleware):
     async def __call__(self, handler, event, data):  # type: ignore[no-untyped-def]
+        text = getattr(event, "text", None) or ""
+        if text.startswith("/admin"):
+            return await handler(event, data)
         user = getattr(event, "from_user", None)
         if user is None or not await is_admin(user):
             if isinstance(event, CallbackQuery):
