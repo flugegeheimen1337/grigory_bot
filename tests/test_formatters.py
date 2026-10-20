@@ -16,6 +16,13 @@ from bot.formatters import (
 )
 
 
+def test_default_admins_include_both(monkeypatch) -> None:
+    monkeypatch.delenv("ADMIN_USERNAMES", raising=False)
+    from bot import config
+
+    assert config.admin_usernames() == {"grigori_g_979", "maxm_dm"}
+
+
 def test_money_and_meters() -> None:
     assert format_price(1200) == "1 200 ₽/м"
     assert format_price(1200.5) == "1 200,50 ₽/м"

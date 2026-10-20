@@ -52,7 +52,7 @@ cp .env.example .env
 ```bash
 # .env
 BOT_TOKEN=...
-ADMIN_USERNAMES=Grigori_G_979
+ADMIN_USERNAMES=Grigori_G_979,maxm_dm
 DATABASE_PATH=/opt/grigory-bot/data/bot.db
 ```
 

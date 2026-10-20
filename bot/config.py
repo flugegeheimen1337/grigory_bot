@@ -27,7 +27,7 @@ def database_path() -> str:
 
 
 def admin_usernames() -> set[str]:
-    raw = os.environ.get("ADMIN_USERNAMES", "Grigori_G_979")
+    raw = os.environ.get("ADMIN_USERNAMES", "Grigori_G_979,maxm_dm")
     names: set[str] = set()
     for part in raw.split(","):
         name = part.strip().lstrip("@").lower()
