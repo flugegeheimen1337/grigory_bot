@@ -10,7 +10,7 @@ from bot import db as database
 from bot.formatters import EMPTY_CATALOG, catalog_header, paginate, product_text
 from bot.handlers.booking import start_booking
 from bot.handlers.ui import send_product_message
-from bot.keyboards import catalog_kb, main_keyboard, product_kb
+from bot.keyboards import catalog_kb, client_keyboard, product_kb
 from bot.routing import private_router
 
 router = private_router()
@@ -26,7 +26,7 @@ async def show_catalog(message: Message, page: int = 0, *, edit: bool = False) -
 
             await safe_edit(message, EMPTY_CATALOG, None)
         else:
-            await message.answer(EMPTY_CATALOG, reply_markup=main_keyboard())
+            await message.answer(EMPTY_CATALOG, reply_markup=await client_keyboard())
         return
     chunk, page, total_pages = paginate(products, page, CATALOG_PAGE)
     text = catalog_header(live, page, total_pages)

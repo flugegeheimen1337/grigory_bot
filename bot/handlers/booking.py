@@ -21,7 +21,7 @@ from bot.formatters import (
     unit_price,
 )
 from bot.handlers.ui import NO_PREVIEW
-from bot.keyboards import booking_cancel_kb, confirm_kb, main_keyboard
+from bot.keyboards import booking_cancel_kb, client_keyboard, confirm_kb
 from bot.routing import private_router
 from bot.states import Booking
 
@@ -131,7 +131,7 @@ async def booking_meters(message: Message, state: FSMContext) -> None:
         await state.clear()
         await message.answer(
             "Этот товар уже недоступен. Откройте каталог ещё раз.",
-            reply_markup=main_keyboard(),
+            reply_markup=await client_keyboard(),
         )
         return
     live = await database.live_enabled()
@@ -167,7 +167,7 @@ async def cancel_booking(callback: CallbackQuery, state: FSMContext) -> None:
             await callback.message.edit_reply_markup(reply_markup=None)
         except TelegramBadRequest:
             pass
-        await callback.message.answer("Бронь отменена.", reply_markup=main_keyboard())
+        await callback.message.answer("Бронь отменена.", reply_markup=await client_keyboard())
     await callback.answer("Бронь отменена")
 
 
@@ -224,7 +224,7 @@ async def confirm_booking(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer("Заявка принята")
     await callback.message.answer(
         "Заявка принята! Менеджер свяжется с вами.",
-        reply_markup=main_keyboard(),
+        reply_markup=await client_keyboard(),
     )
     if order is not None:
         await notify_admins(callback.bot, order)

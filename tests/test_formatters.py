@@ -23,6 +23,20 @@ def test_default_admins_include_both(monkeypatch) -> None:
     assert config.admin_usernames() == {"grigori_g_979", "maxm_dm"}
 
 
+def test_live_button_appears_only_during_stream() -> None:
+    from bot.keyboards import BTN_CATALOG, BTN_LIVE, main_keyboard
+
+    def labels(markup):  # type: ignore[no-untyped-def]
+        return [button.text for row in markup.keyboard for button in row]
+
+    hidden = labels(main_keyboard(False))
+    shown = labels(main_keyboard(True))
+    assert BTN_LIVE not in hidden
+    assert BTN_CATALOG in hidden
+    assert BTN_LIVE in shown
+    assert shown[0] == BTN_LIVE
+
+
 def test_money_and_meters() -> None:
     assert format_price(1200) == "1 200 ₽/м"
     assert format_price(1200.5) == "1 200,50 ₽/м"

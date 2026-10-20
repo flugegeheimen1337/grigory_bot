@@ -13,16 +13,25 @@ BTN_HELP = "ℹ️ ПОМОЩЬ"
 MENU_TEXTS = (BTN_LIVE, BTN_CATALOG, BTN_MANAGER, BTN_HELP)
 
 
-def main_keyboard() -> ReplyKeyboardMarkup:
+def main_keyboard(live: bool) -> ReplyKeyboardMarkup:
+    rows: list[list[KeyboardButton]] = []
+    if live:
+        rows.append([KeyboardButton(text=BTN_LIVE)])
+    rows.append([KeyboardButton(text=BTN_CATALOG)])
+    rows.append([KeyboardButton(text=BTN_MANAGER), KeyboardButton(text=BTN_HELP)])
     return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text=BTN_LIVE)],
-            [KeyboardButton(text=BTN_CATALOG)],
-            [KeyboardButton(text=BTN_MANAGER), KeyboardButton(text=BTN_HELP)],
-        ],
+        keyboard=rows,
         resize_keyboard=True,
         input_field_placeholder="Выберите раздел",
     )
+
+
+async def client_keyboard() -> ReplyKeyboardMarkup:
+    from bot import db as database
+
+    enabled = await database.live_enabled()
+    url = (await database.get_setting("live_url")).strip()
+    return main_keyboard(enabled and bool(url))
 
 
 def nav_row(page: int, total_pages: int, prefix: str) -> list[InlineKeyboardButton]:
@@ -87,16 +96,18 @@ def cancel_inline() -> InlineKeyboardMarkup:
 
 
 def admin_menu_kb(live: bool) -> InlineKeyboardMarkup:
-    live_label = "🔴 LIVE: включён" if live else "⚪ LIVE: выключен"
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="➕ Добавить товар", callback_data="m:add")],
-            [InlineKeyboardButton(text="📋 Товары", callback_data="m:list:0")],
-            [InlineKeyboardButton(text=live_label, callback_data="m:live")],
-            [InlineKeyboardButton(text="📨 Заявки", callback_data="m:orders:0")],
-            [InlineKeyboardButton(text="👤 Менеджер", callback_data="m:mgr")],
-        ]
-    )
+    rows: list[list[InlineKeyboardButton]] = [
+        [InlineKeyboardButton(text="➕ Добавить товар", callback_data="m:add")],
+        [InlineKeyboardButton(text="📋 Товары", callback_data="m:list:0")],
+    ]
+    if live:
+        rows.append([InlineKeyboardButton(text="⏹ Выключить LIVE", callback_data="m:liveoff")])
+        rows.append([InlineKeyboardButton(text="🔗 Сменить ссылку эфира", callback_data="m:seturl")])
+    else:
+        rows.append([InlineKeyboardButton(text="▶️ Включить LIVE", callback_data="m:seturl")])
+    rows.append([InlineKeyboardButton(text="📨 Заявки", callback_data="m:orders:0")])
+    rows.append([InlineKeyboardButton(text="👤 Менеджер", callback_data="m:mgr")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def live_admin_kb(enabled: bool) -> InlineKeyboardMarkup:

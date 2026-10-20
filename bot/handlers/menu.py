@@ -14,7 +14,7 @@ from bot import db as database
 from bot.access import ensure_admin_commands, is_admin
 from bot.formatters import HELP_TEXT, esc, welcome_text
 from bot.handlers.catalog import show_catalog
-from bot.keyboards import BTN_CATALOG, BTN_HELP, BTN_LIVE, BTN_MANAGER, MENU_TEXTS, main_keyboard
+from bot.keyboards import BTN_CATALOG, BTN_HELP, BTN_LIVE, BTN_MANAGER, MENU_TEXTS, client_keyboard
 from bot.routing import private_router
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ async def start(message: Message, state: FSMContext) -> None:
     live = await database.live_enabled()
     await message.answer(
         welcome_text(live),
-        reply_markup=main_keyboard(),
+        reply_markup=await client_keyboard(),
         parse_mode=ParseMode.HTML,
     )
 
@@ -46,7 +46,7 @@ async def cancel(message: Message, state: FSMContext) -> None:
     text = "Действие отменено."
     if message.from_user and await is_admin(message.from_user):
         text += "\nАдмин-панель: /admin"
-    await message.answer(text, reply_markup=main_keyboard())
+    await message.answer(text, reply_markup=await client_keyboard())
 
 
 @router.message(F.text.in_(MENU_TEXTS))
@@ -59,7 +59,7 @@ async def on_menu(message: Message, state: FSMContext) -> None:
     elif message.text == BTN_MANAGER:
         await send_manager(message)
     elif message.text == BTN_HELP:
-        await message.answer(HELP_TEXT, parse_mode=ParseMode.HTML, reply_markup=main_keyboard())
+        await message.answer(HELP_TEXT, parse_mode=ParseMode.HTML, reply_markup=await client_keyboard())
 
 
 async def send_live(message: Message) -> None:
@@ -69,7 +69,7 @@ async def send_live(message: Message) -> None:
         await message.answer(
             "Сейчас эфир не идёт.\n"
             "В каталоге обычные цены. Когда включим LIVE, здесь появится ссылка на трансляцию.",
-            reply_markup=main_keyboard(),
+            reply_markup=await client_keyboard(),
         )
         return
     text = (
@@ -79,7 +79,7 @@ async def send_live(message: Message) -> None:
     if not url:
         await message.answer(
             "Эфир отмечен как идущий, но ссылка ещё не задана. Напишите менеджеру.",
-            reply_markup=main_keyboard(),
+            reply_markup=await client_keyboard(),
         )
         return
     keyboard = InlineKeyboardMarkup(
@@ -89,7 +89,7 @@ async def send_live(message: Message) -> None:
         await message.answer(text, reply_markup=keyboard)
     except TelegramBadRequest:
         logger.exception("Telegram не принял ссылку эфира")
-        await message.answer(f"{text}\n\n{url}", reply_markup=main_keyboard())
+        await message.answer(f"{text}\n\n{url}", reply_markup=await client_keyboard())
 
 
 async def send_manager(message: Message) -> None:

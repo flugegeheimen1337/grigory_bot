@@ -102,6 +102,12 @@ async def _init() -> None:
             user_id INTEGER PRIMARY KEY,
             username TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT,
+            updated_at TEXT NOT NULL
+        );
         """
     )
     for key, value in _DEFAULTS.items():
@@ -285,3 +291,26 @@ async def list_admin_ids() -> list[int]:
     cursor = await _require().execute("SELECT user_id FROM admins ORDER BY user_id")
     rows = await cursor.fetchall()
     return [int(row["user_id"]) for row in rows]
+
+
+async def remember_user(user_id: int, username: str | None) -> None:
+    await _require().execute(
+        """
+        INSERT INTO users (user_id, username, updated_at) VALUES (?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+            username = excluded.username,
+            updated_at = excluded.updated_at
+        """,
+        (user_id, username or "", utc_now()),
+    )
+    await _require().commit()
+
+
+async def list_user_ids() -> list[int]:
+    cursor = await _require().execute("SELECT user_id FROM users ORDER BY user_id")
+    rows = await cursor.fetchall()
+    return [int(row["user_id"]) for row in rows]
+
+
+async def audience_ids() -> list[int]:
+    return sorted(set(await list_user_ids()) | set(await list_admin_ids()))

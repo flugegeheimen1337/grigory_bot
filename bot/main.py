@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher
+from aiogram import BaseMiddleware, Bot, Dispatcher
 from aiogram.types import BotCommand, ErrorEvent
 
 from bot import config
@@ -13,8 +13,20 @@ from bot.handlers import admin, booking, catalog, fallback, menu
 logger = logging.getLogger(__name__)
 
 
+class RememberUserMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event, data):  # type: ignore[no-untyped-def]
+        user = data.get("event_from_user")
+        if user is not None and not getattr(user, "is_bot", False):
+            try:
+                await database.remember_user(user.id, user.username)
+            except Exception:
+                logger.exception("Не удалось запомнить пользователя %s", getattr(user, "id", None))
+        return await handler(event, data)
+
+
 def build_dispatcher() -> Dispatcher:
     dispatcher = Dispatcher()
+    dispatcher.update.outer_middleware(RememberUserMiddleware())
     dispatcher.include_router(menu.router)
     dispatcher.include_router(catalog.router)
     dispatcher.include_router(booking.router)
