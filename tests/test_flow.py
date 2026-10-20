@@ -15,8 +15,6 @@ from aiogram.types import (
     PhotoSize,
     Update,
     User,
-    VideoChatEnded,
-    VideoChatStarted,
 )
 
 from bot import db as database
@@ -99,25 +97,6 @@ def _callback(update_id: int, user: User, data: str) -> Update:
     )
 
 
-def _channel_video(update_id: int, *, started: bool) -> Update:
-    chat = Chat(id=-100777, type=ChatType.CHANNEL, title="VIP Camilla DEALER LIVE")
-    extra = (
-        {"video_chat_started": VideoChatStarted()}
-        if started
-        else {"video_chat_ended": VideoChatEnded(duration=60)}
-    )
-    return Update(
-        update_id=update_id,
-        channel_post=Message(
-            message_id=update_id,
-            date=datetime.now(timezone.utc),
-            chat=chat,
-            sender_chat=chat,
-            **extra,
-        ),
-    )
-
-
 def _sent(session: DummySession, chat_id: int) -> list[str]:
     texts: list[str] = []
     for method in session.calls:
@@ -173,14 +152,10 @@ async def _flow() -> None:
         assert product["stock_m"] == 40
         assert "145 см" in product["description"]
 
-        await dispatcher.feed_update(bot, _callback(11, admin, "m:seturl"))
+        await dispatcher.feed_update(bot, _callback(11, admin, "m:liveon"))
         await dispatcher.feed_update(bot, _message(12, admin, "https://example.com/live"))
-        assert await database.live_enabled() is False
-        assert await database.get_setting("live_url") == "https://example.com/live"
-
-        await dispatcher.feed_update(bot, _channel_video(30, started=True))
         assert await database.live_enabled() is True
-        assert await database.get_setting("live_chat_id") == "-100777"
+        assert await database.get_setting("live_url") == "https://example.com/live"
 
         await dispatcher.feed_update(bot, _message(13, client, "/start"))
         assert any("LIVE-цена" in text for text in _sent(session, client.id))
@@ -220,7 +195,7 @@ async def _flow() -> None:
         admin_texts = _sent(session, admin.id)
         assert any("Новая заявка" in text and "+79001112233" in text for text in admin_texts)
 
-        await dispatcher.feed_update(bot, _channel_video(40, started=False))
+        await dispatcher.feed_update(bot, _callback(40, admin, "m:liveoff"))
         assert await database.live_enabled() is False
         await dispatcher.feed_update(bot, _message(41, client, BTN_LIVE))
         assert any("эфир не идёт" in text for text in _sent(session, client.id))

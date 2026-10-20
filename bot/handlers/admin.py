@@ -53,11 +53,9 @@ async def show_admin_home(message: Message, *, edit: bool) -> None:
     active = sum(1 for product in products if product["is_active"])
     orders = await database.count_orders()
     url = await database.get_setting("live_url")
-    title = await database.get_setting("live_chat_title")
-    username = await database.get_setting("bot_username")
     text = (
         "<b>Админ-панель</b>\n\n"
-        f"{live_admin_text(live, url, chat_title=title, bot_username=username)}\n\n"
+        f"{live_admin_text(live, url)}\n\n"
         f"Товаров в каталоге: {active}\n"
         f"Заявок: {orders}\n\n"
         "Клиентское меню — /start."
@@ -77,9 +75,7 @@ async def show_admin_home(message: Message, *, edit: bool) -> None:
 async def show_live_screen(message: Message, *, edit: bool) -> None:
     enabled = await database.live_enabled()
     url = await database.get_setting("live_url")
-    title = await database.get_setting("live_chat_title")
-    username = await database.get_setting("bot_username")
-    text = live_admin_text(enabled, url, chat_title=title, bot_username=username)
+    text = live_admin_text(enabled, url)
     keyboard = live_admin_kb(enabled)
     if edit:
         await safe_edit(message, text, keyboard)
@@ -614,12 +610,12 @@ async def live_off(callback: CallbackQuery, state: FSMContext) -> None:
     await database.set_setting("live_enabled", "0")
     if callback.message is not None:
         await show_admin_home(callback.message, edit=True)
-    await callback.answer("LIVE выключен")
+    await callback.answer("Трансляция закончена")
     if was_enabled:
         await publish_live_state(callback.bot, enabled=False)
 
 
-@router.callback_query(F.data == "m:seturl")
+@router.callback_query(F.data.in_({"m:liveon", "m:seturl"}))
 async def ask_live_url(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(SetLiveUrl.url)
     await state.set_data({})
@@ -630,11 +626,18 @@ async def ask_live_url(callback: CallbackQuery, state: FSMContext) -> None:
     rows.append([InlineKeyboardButton(text="✖️ Отмена", callback_data="m:adm")])
     if callback.message is not None:
         await callback.message.answer(
-            "Пришлите ссылку, которую клиенты откроют кнопкой «LIVE СЕЙЧАС».\n"
-            "Сама кнопка появится только когда в канале начнётся эфир.",
+            "Вставьте ссылку на трансляцию.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=rows),
         )
     await callback.answer()
+
+
+async def _start_broadcast(bot, url: str) -> None:  # type: ignore[no-untyped-def]
+    was_enabled = await database.live_enabled()
+    await database.set_setting("live_url", url)
+    await database.set_setting("live_enabled", "1")
+    if not was_enabled:
+        await publish_live_state(bot, enabled=True)
 
 
 @router.callback_query(SetLiveUrl.url, F.data == "m:keepurl")
@@ -644,18 +647,18 @@ async def keep_live_url(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.answer("Сохранённой ссылки нет", show_alert=True)
         return
     await state.clear()
-    live = await database.live_enabled()
+    await _start_broadcast(callback.bot, url)
     if callback.message is not None:
         await callback.message.answer(
-            "Ссылка на месте. Кнопка «LIVE СЕЙЧАС» включается только на время эфира в канале.",
-            reply_markup=admin_menu_kb(live),
+            "Трансляция включена.\nКлиентам видна кнопка «LIVE СЕЙЧАС», в каталоге действует LIVE-цена.",
+            reply_markup=admin_menu_kb(True),
         )
-    await callback.answer("Ссылка сохранена")
+    await callback.answer("Трансляция включена")
 
 
 @router.callback_query(F.data == "m:keepurl")
 async def keep_live_url_outside(callback: CallbackQuery) -> None:
-    await callback.answer("Сначала откройте «Ссылка эфира»", show_alert=True)
+    await callback.answer("Сначала нажмите «Включить трансляцию»", show_alert=True)
 
 
 @router.message(SetLiveUrl.url, F.text, NotCommand())
@@ -667,14 +670,11 @@ async def save_live_url(message: Message, state: FSMContext) -> None:
             reply_markup=cancel_inline(),
         )
         return
-    await database.set_setting("live_url", url)
     await state.clear()
-    live = await database.live_enabled()
+    await _start_broadcast(message.bot, url)
     await message.answer(
-        "Ссылка сохранена.\n"
-        "Кнопка «LIVE СЕЙЧАС» появится у клиентов, когда в канале начнётся эфир, "
-        "и пропадёт, когда эфир закончится.",
-        reply_markup=admin_menu_kb(live),
+        "Трансляция включена.\nКлиентам видна кнопка «LIVE СЕЙЧАС», в каталоге действует LIVE-цена.",
+        reply_markup=admin_menu_kb(True),
     )
 
 
