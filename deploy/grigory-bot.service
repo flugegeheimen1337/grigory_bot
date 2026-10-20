@@ -1,0 +1,19 @@
+[Unit]
+Description=Telegram bot: fabric catalog and live orders
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bot
+Group=bot
+WorkingDirectory=/opt/grigory-bot
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+EnvironmentFile=/opt/grigory-bot/.env
+ExecStart=/opt/grigory-bot/.venv/bin/python -m bot
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
