@@ -8,7 +8,7 @@ from aiogram.types import BotCommand, ErrorEvent
 
 from bot import config
 from bot import db as database
-from bot.handlers import admin, booking, catalog, fallback, menu
+from bot.handlers import admin, booking, catalog, fallback, menu, stream
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def build_dispatcher() -> Dispatcher:
     dispatcher.include_router(catalog.router)
     dispatcher.include_router(booking.router)
     dispatcher.include_router(admin.router)
+    dispatcher.include_router(stream.router)
     dispatcher.include_router(fallback.router)
 
     @dispatcher.error()
@@ -60,6 +61,8 @@ def build_dispatcher() -> Dispatcher:
 async def configure_bot(bot: Bot) -> None:
     me = await bot.get_me()
     logger.info("Бот запущен: @%s", me.username)
+    if me.username:
+        await database.set_setting("bot_username", me.username)
     await bot.set_my_commands(
         [
             BotCommand(command="start", description="Главное меню"),
@@ -87,7 +90,10 @@ async def run() -> None:
     dispatcher = build_dispatcher()
     try:
         await configure_bot(bot)
-        await dispatcher.start_polling(bot, allowed_updates=["message", "callback_query"])
+        await dispatcher.start_polling(
+            bot,
+            allowed_updates=["message", "callback_query", "channel_post", "my_chat_member"],
+        )
     finally:
         await database.close()
         await bot.session.close()

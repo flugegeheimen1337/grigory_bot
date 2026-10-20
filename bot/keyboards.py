@@ -99,25 +99,21 @@ def admin_menu_kb(live: bool) -> InlineKeyboardMarkup:
     rows: list[list[InlineKeyboardButton]] = [
         [InlineKeyboardButton(text="➕ Добавить товар", callback_data="m:add")],
         [InlineKeyboardButton(text="📋 Товары", callback_data="m:list:0")],
+        [InlineKeyboardButton(text="🔗 Ссылка эфира", callback_data="m:seturl")],
     ]
     if live:
-        rows.append([InlineKeyboardButton(text="⏹ Выключить LIVE", callback_data="m:liveoff")])
-        rows.append([InlineKeyboardButton(text="🔗 Сменить ссылку эфира", callback_data="m:seturl")])
-    else:
-        rows.append([InlineKeyboardButton(text="▶️ Включить LIVE", callback_data="m:seturl")])
+        rows.append([InlineKeyboardButton(text="⏹ Эфир уже закончился", callback_data="m:liveoff")])
     rows.append([InlineKeyboardButton(text="📨 Заявки", callback_data="m:orders:0")])
     rows.append([InlineKeyboardButton(text="👤 Менеджер", callback_data="m:mgr")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def live_admin_kb(enabled: bool) -> InlineKeyboardMarkup:
+    rows: list[list[InlineKeyboardButton]] = [
+        [InlineKeyboardButton(text="🔗 Ссылка эфира", callback_data="m:seturl")]
+    ]
     if enabled:
-        rows = [
-            [InlineKeyboardButton(text="⏹ Выключить LIVE", callback_data="m:liveoff")],
-            [InlineKeyboardButton(text="🔗 Сменить ссылку", callback_data="m:seturl")],
-        ]
-    else:
-        rows = [[InlineKeyboardButton(text="▶️ Включить LIVE", callback_data="m:seturl")]]
+        rows.append([InlineKeyboardButton(text="⏹ Эфир уже закончился", callback_data="m:liveoff")])
     rows.append([InlineKeyboardButton(text="⬅️ В админку", callback_data="m:adm")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 

@@ -281,18 +281,40 @@ def new_order_notification(order: dict[str, Any]) -> str:
     return "<b>Новая заявка</b>\n" + order_admin_text(order)
 
 
-def live_admin_text(enabled: bool, url: str) -> str:
-    status = "включён" if enabled else "выключен"
-    lines = [
-        "<b>Режим LIVE</b>",
-        "",
-        f"Сейчас: {status}.",
-        "Когда LIVE включён, в карточках показывается LIVE-цена, а кнопка «LIVE СЕЙЧАС» ведёт на трансляцию.",
-    ]
-    if url:
-        lines.extend(["", f"Ссылка: {esc(url)}"])
+def live_admin_text(
+    enabled: bool,
+    url: str,
+    *,
+    chat_title: str = "",
+    bot_username: str = "",
+) -> str:
+    status = "идёт" if enabled else "не идёт"
+    if enabled:
+        effect = "У клиентов в меню есть «LIVE СЕЙЧАС», в каталоге действует LIVE-цена."
     else:
-        lines.extend(["", "Ссылка ещё не задана."])
+        effect = "Кнопка «LIVE СЕЙЧАС» скрыта, в каталоге обычные цены."
+    who = f"@{bot_username.lstrip('@')}" if bot_username.strip() else "этого бота"
+    title = chat_title.strip()
+    if title:
+        source = (
+            f"Канал: {esc(title)}. "
+            "Бот включает кнопку, когда там начинается эфир, и скрывает её, когда эфир заканчивается."
+        )
+    else:
+        source = (
+            f"Канал ещё не подключён. Добавьте {esc(who)} администратором в канал, где идёт трансляция. "
+            "Тогда бот сам поймёт, идёт эфир или нет."
+        )
+    lines = [
+        "<b>Эфир</b>",
+        "",
+        f"Сейчас трансляция {status}. {effect}",
+        source,
+    ]
+    if url.strip():
+        lines.extend(["", f"Ссылка для клиентов: {esc(url.strip())}"])
+    else:
+        lines.extend(["", "Ссылка для клиентов ещё не задана."])
     return "\n".join(lines)
 
 

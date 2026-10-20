@@ -22,6 +22,9 @@ _PRODUCT_FIELDS = {
 _DEFAULTS = {
     "live_enabled": "0",
     "live_url": "",
+    "live_chat_id": "",
+    "live_chat_title": "",
+    "bot_username": "",
     "manager_name": "Григорий",
     "manager_username": "Grigori_G_979",
     "manager_phone": "",

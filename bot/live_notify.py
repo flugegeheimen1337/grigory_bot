@@ -13,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 async def publish_live_state(bot: Bot, *, enabled: bool) -> None:
     url = (await database.get_setting("live_url")).strip()
+    if enabled and not url:
+        logger.info("Эфир начался, но ссылка для клиентов ещё не задана")
+        return
     visible = enabled and bool(url)
     keyboard = main_keyboard(visible)
     if visible:

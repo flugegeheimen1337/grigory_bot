@@ -68,7 +68,7 @@ async def send_live(message: Message) -> None:
     if not enabled:
         await message.answer(
             "Сейчас эфир не идёт.\n"
-            "В каталоге обычные цены. Когда включим LIVE, здесь появится ссылка на трансляцию.",
+            "Кнопка появится снова, когда трансляция начнётся. В каталоге пока обычные цены.",
             reply_markup=await client_keyboard(),
         )
         return
