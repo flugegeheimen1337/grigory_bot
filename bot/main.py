@@ -55,9 +55,9 @@ async def configure_bot(bot: Bot) -> None:
         ]
     )
     try:
-        await bot.set_my_short_description("Каталог тканей и заявки на бронь")
+        await bot.set_my_short_description("VIP Camilla: каталог тканей и заявки на бронь")
         await bot.set_my_description(
-            "Каталог тканей с ценами и остатками. "
+            "Каталог тканей VIP Camilla: фото, цены и остатки. "
             "Во время эфира действует LIVE-цена, заявку на бронь можно оставить прямо в боте."
         )
     except Exception:
